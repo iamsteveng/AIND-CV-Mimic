@@ -17,6 +17,9 @@ detector.detectAllExpressions();
 detector.detectAllEmojis();
 detector.detectAllAppearance();
 
+// Game
+var game = null;
+
 // --- Utility values and functions ---
 
 // Unicode values for all emojis Affectiva can detect
@@ -25,6 +28,9 @@ var emojis = [ 128528, 9786, 128515, 128524, 128527, 128521, 128535, 128539, 128
 // Update target emoji being displayed by supplying a unicode value
 function setTargetEmoji(code) {
   $("#target").html("&#" + code + ";");
+}
+function clearTargetEmoji() {
+  $("#target").html("");
 }
 
 // Convert a special character to its unicode value (can be 1 or 2 units long)
@@ -62,6 +68,8 @@ function onStop() {
     detector.removeEventListener();
     detector.stop();  // stop detector
   }
+  game.stop();
+  console.log(game);
 };
 
 // Reset button
@@ -75,6 +83,7 @@ function onReset() {
 
   // TODO(optional): You can restart the game as well
   // <your code here>
+  game.reset(true);
 };
 
 // Add a callback to notify when camera access is allowed
@@ -103,6 +112,10 @@ detector.addEventListener("onInitializeSuccess", function() {
 
   // TODO(optional): Call a function to initialize the game, if needed
   // <your code here>
+  console.log('init game');
+  game = new Game();
+  game.start();
+  console.log(game);
 });
 
 // Add a callback to receive the results from processing an image
@@ -129,11 +142,13 @@ detector.addEventListener("onImageResultsSuccess", function(faces, image, timest
     log('#results', "Emoji: " + faces[0].emojis.dominantEmoji);
 
     // Call functions to draw feature points and dominant emoji (for the first face only)
+    console.log("onImageResultsSuccess");
     drawFeaturePoints(canvas, image, faces[0]);
     drawEmoji(canvas, image, faces[0]);
 
     // TODO: Call your function to run the game (define it first!)
     // <your code here>
+    game.checkResult(faces[0].emojis.dominantEmoji);
   }
 });
 
@@ -181,9 +196,7 @@ function drawEmoji(canvas, img, face) {
   // TIP: Pick a particular feature point as an anchor so that the emoji sticks to your face
   // <your code here>
   var top_right_corner = {y:0, x:ctx.canvas.width};
-  console.log(top_right_corner);
   var closet_fpt = {dist:9999, y:0, x:0};
-  console.log(closet_fpt);
   for (var id in face.featurePoints) {
     var featurePoint = face.featurePoints[id];
     distance = calculateDistance(top_right_corner, featurePoint);
@@ -216,3 +229,80 @@ function calculateDistance(firstPoint, secondPoint) {
 // - Define a game reset function (same as init?), and call it from the onReset() function above
 
 // <your code here>
+
+class Game {
+
+  constructor() {
+    this.isRunning = false;
+    this.score = 0;
+    this.max_score = 5;
+    this.current_emoji = '';
+  }
+
+  checkResult(input) {
+    if (this.isRunning && this.current_emoji == toUnicode(input)) {
+      alert('Well done!');
+      this.toStateWinRound();
+    }
+  }
+
+  toStateWinRound() {
+    this.score++;
+    this.setGameScore(this.score);
+    if (this.score == this.max_score) {
+      alert('Congratulation! Your game is done! Press ok to restart');
+      this.reset(true);
+    }
+    else {
+      this.toStateNextRound();
+    }
+  }
+
+  toStateNextRound() {
+    this.setTarget(this.getRandomEmoji());
+  }
+
+  start() {
+    if (!this.isRunning) {
+      this.isRunning = true;
+      this.reset();
+      this.toStateNextRound();
+    }
+  }
+
+  stop() {
+    this.isRunning = false;
+    this.reset();
+  }
+
+  reset(startOver=false) {
+    this.setGameScore(0);
+    this.setTarget('');
+    if (startOver && this.isRunning) {
+      this.toStateNextRound();
+    }
+  }
+
+  setGameScore(score) {
+    this.score = score;
+    setScore(this.score, this.max_score);
+  }
+
+  setTarget(emoji='') {
+    this.current_emoji = emoji;
+    if (emoji == '') {
+      clearTargetEmoji();
+    }
+    else {
+      setTargetEmoji(this.current_emoji);
+    }
+  }
+
+  // 
+  // Util functions
+  // 
+
+  getRandomEmoji() {
+    return emojis[Math.floor(emojis.length * Math.random())];
+  }
+}

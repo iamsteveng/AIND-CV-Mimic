@@ -172,11 +172,34 @@ function drawEmoji(canvas, img, face) {
 
   // TODO: Set the font and style you want for the emoji
   // <your code here>
+  // console.log(face);
+  // console.log(ctx);
+  ctx.font = '24px serif';
   
   // TODO: Draw it using ctx.strokeText() or fillText()
   // See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/fillText
   // TIP: Pick a particular feature point as an anchor so that the emoji sticks to your face
   // <your code here>
+  var top_right_corner = {y:0, x:ctx.canvas.width};
+  console.log(top_right_corner);
+  var closet_fpt = {dist:9999, y:0, x:0};
+  console.log(closet_fpt);
+  for (var id in face.featurePoints) {
+    var featurePoint = face.featurePoints[id];
+    distance = calculateDistance(top_right_corner, featurePoint);
+    if (distance < closet_fpt.dist) {
+      closet_fpt.dist = distance;
+      closet_fpt.y = featurePoint.y;
+      closet_fpt.x = featurePoint.x;
+    }
+  }
+  ctx.fillText(face.emojis.dominantEmoji, closet_fpt.x, closet_fpt.y);
+}
+
+function calculateDistance(firstPoint, secondPoint) {
+  var a = firstPoint.x - secondPoint.x;
+  var b = firstPoint.y - secondPoint.y;
+  return Math.sqrt( a*a + b*b );
 }
 
 // TODO: Define any variables and functions to implement the Mimic Me! game mechanics
